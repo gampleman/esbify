@@ -1,0 +1,9 @@
+!expectation
+name: test
+
+---
+
+condition: played(1) & played(2)
+----
+name: has_no_bangs
+condition: requires_bang_response(P) | has_no_bangs(P)

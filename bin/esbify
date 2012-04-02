@@ -1,0 +1,73 @@
+#!/usr/bin/env ruby
+require "optparse"
+require File.dirname(__FILE__) + "/../lib/ESBify"
+
+
+
+options = {stdout: false, expectations: "./Expectations.xml", behaviors: "./Behaviours.xml", filter: /.*/, only: %w[expectations behaviors strategies], context: {}}
+OptionParser.new do |opts|
+  opts.banner = "Usage: esbify [options] FILES..."
+  
+  opts.on("-e", "--expectations FILE", "Output Expectations to FILE") do |v|
+    options[:expectations] = v
+  end
+  
+  opts.on("-b", "--behaviors FILE", "Output Behaviours to FILE") do |v|
+    options[:behaviors] = v
+  end
+  
+  opts.on("--[no-]stdout", "Print to STDOUT") do |v|
+    options[:stdout] = v
+  end
+  
+  opts.on("-f", "--filter REGEXP", "When printing out expectations, only print those matching this regexp.") do |v|
+    options[:filter] = Regexp.new(v)
+  end
+  
+  opts.on("--only expectations,behaviors,strategies", Array, "Only generate these files") do |v|
+    raise ArgumentError unless v.all?{|o| %w[expectations behaviors strategies].include?(o)}
+    options[:only] = v
+  end
+  
+  opts.on("--context HASH_OR_PATH", "A path to a ruby class or a hash of values that will be passed to ERB", "The ruby class should have a underscored filename and CamelCased classname. ") do |v|
+    if v =~ /\:|=>/
+      options[:context] = eval(v, binding)
+    else
+      require v
+      name = v.gsub(/(_|^)./){|a| a.chars.to_a.last.upcase}
+      const = Object.const_defined?(name) ? Object.const_get(name) : Object.const_missing(name)
+      options[:context] = const.new
+    end
+  end
+  
+  opts.on_tail("-h", "--help [README]", "Call -h with README to view the readme file") do |t|
+    if t == "README"
+      puts File.read(File.dirname(__FILE__) + "/../README.md")
+    else
+      puts opts
+    end
+    exit
+  end
+  
+  opts.on_tail("-v", "--version", "Show version") do
+    puts ESBify::VERSION
+    exit
+  end
+  
+end.parse!
+
+parser = ESBify::Parser.new options[:context]
+
+ARGV.each do |f|
+  parser.parse_file! f
+end
+
+if options[:stdout]
+  puts parser.expectations if options[:only].include?("expectations")
+  puts parser.behaviors if options[:only].include?("behaviors")
+else
+  File.open(options[:expectations], "w") {|f| f << parser.expectations } if options[:only].include?("expectations")
+  File.open(options[:behaviors], "w") {|f| f << parser.behaviors } if options[:only].include?("behaviors")
+end
+
+puts parser.expectation.names.grep(options[:filter]).join(",")
