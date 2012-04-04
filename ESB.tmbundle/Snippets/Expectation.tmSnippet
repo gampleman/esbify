@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>content</key>
+	<string>name:       ${1:expectation_name}${2:
+agent:      ${3:self}}
+condition:  ${4:some_condition}
+phi:        ${5:$1}
+${6:test_plus:  $7
+rho_plus:
+  ${8:+}}
+${9:test_minus:  $0
+rho_plus:
+  }
+
+------</string>
+	<key>name</key>
+	<string>Expectation</string>
+	<key>scope</key>
+	<string>source.esb</string>
+	<key>tabTrigger</key>
+	<string>exp</string>
+	<key>uuid</key>
+	<string>FEB78640-82A4-4257-AE82-F4A05C8981BE</string>
+</dict>
+</plist>

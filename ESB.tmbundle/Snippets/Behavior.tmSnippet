@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>content</key>
+	<string>name:   ${1:name_of_behavior}${2:
+jason:  ${3:jason_condition}}${4:
+ctl:    ${5:ctl_condition}}
+action: $6
+
+----</string>
+	<key>name</key>
+	<string>Behavior</string>
+	<key>scope</key>
+	<string>source.esb</string>
+	<key>tabTrigger</key>
+	<string>beh</string>
+	<key>uuid</key>
+	<string>2585098C-57C4-4EA6-AE1A-FAE7CBCF7E94</string>
+</dict>
+</plist>
