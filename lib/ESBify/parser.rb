@@ -54,7 +54,8 @@ class ESBify::Parser
     # Split by sections
     str.split(/\!(?=(?:expectation|behaviou?r|strateg(?:y|ie))s?\n)/).each do |section|
       next if section =~ /\A\s*\z/m
-      m = section.match /\A(expectation|behaviou?r|strateg(?:y|ie))s?/
+      section.strip!
+      m = section.match /\A!?(expectation|behaviou?r|strateg(?:y|ie))s?/
       txt = str.split("\n")
       txt.shift
       txt.join("\n")

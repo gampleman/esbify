@@ -1,16 +1,42 @@
-!expectation
-name: test
+# This is a comment
 
----
+# This is a header. Anything after this header will go to the relevant file
+!expectations 
 
-condition: played(1) & played(2)
-----
-name: has_no_bangs
-condition: requires_bang_response(P) | has_no_bangs(P)
+# And this is an element, in this case an expectation.
+name:       may_not_have_bangs
+# We haven't included an `agent:` label, it defaults to `self`.
+condition:  played(P1, duel, P2) | responded(P1, bang, P2, duel) | played(P1, indians, P2)
+phi:        requires_bang_response(P2)
+test_plus:  lost_life(P2)
+test_minus: played(P2, bang, P3) | responded(P2, bang, P3, _)
+rho_plus:
+  + has_no_bangs # `+` means that this will be added to EXP_C
+  - may_not_have_bangs # `-` means this will be removed from EXP_C
+rho_minus:
+  - has_no_bangs
 
----
+# Lines separate elements
+----------
 
-test_expectation:
-condition: a
-test_plus: a(b) & c(d) 
- + has_no_bangs
+# As a shortcut if the first label in an element has no content it is automatically considered a name
+has_no_bangs: # equivalent to `name: has_no_bangs`
+condition:  requires_bang_response℗ | has_no_bangs(P)
+phi:        has_no_bangs_phi(P)
+# You can use embedded Ruby to process things compile time
+<% if @drawing_supported %>
+test_minus: draw(P, X)
+rho_minus:
+  - has_no_bangs
+<% end %>
+# Since test_plus (or minus) is closely related to rho_plus (or minus), the rho may be ommited
+test_plus: see(Enemy)
+  - may_not_have_bangs
+
+
+# As you have guessed this goes to Behaviors.xml
+!behaviors
+
+name:   JI plans
+jason:  has_no_bangs(P)
+action: card_expectation(P, bang, 0)
