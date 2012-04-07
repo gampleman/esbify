@@ -7,3 +7,10 @@ condition: played(1) & played(2)
 ----
 name: has_no_bangs
 condition: requires_bang_response(P) | has_no_bangs(P)
+
+---
+
+test_expectation:
+condition: a
+test_plus: a(b) & c(d) 
+ + has_no_bangs

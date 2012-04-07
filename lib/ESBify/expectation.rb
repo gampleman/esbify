@@ -22,15 +22,37 @@ module ESBify
       }
     end
     
-    def <<(sects)
+    def parse!(str)
       @names ||= []
-      @data += sects.map do |sect|
-        sect["rho_plus"] = parse_mods(sect["rho_plus"]) if sect["rho_plus"]
-        sect["rho_minus"] = parse_mods(sect["rho_minus"]) if sect["rho_minus"]
+      segs = str.split(/\s*\n---+\s*\n\s*/m)
+      @data += segs.map do |seg|
+        ms = seg.scan /(?:^|\n)(#{keys})\s*\:\s*(.+?)(?=(?:\n(?:#{keys})\s*\:|\z))/m
+        if m1 = seg.strip.match(/(?:^)(?!#{keys})(\w+)\s*\:\s*\n/)
+          ms << ["name", m1[1]]
+        end
+        
+        sect = Hash[*ms.flatten.map(&:strip)]
+        
+        if sect["rho_plus"]
+          sect["rho_plus"] = parse_mods(sect["rho_plus"])
+        elsif sect["test_plus"]
+          sect["rho_plus"] = parse_mods(sect["test_plus"])
+          sect["test_plus"] = sect["test_plus"].split(/^\s*(\+|\-)/).first.strip
+        end
+        
+        if sect["rho_minus"]
+          sect["rho_minus"] = parse_mods(sect["rho_minus"])
+        elsif sect["test_minus"]
+          sect["rho_minus"] = parse_mods(sect["test_minus"])
+          sect["test_minus"] = sect["test_minus"].split(/^\s*(\+|\-)/).first.strip
+        end
+        
         @names << sect["name"] if sect["name"]
-        defaults.merge(sect)
+        defaults.merge sect
       end
+
     end
+
     
     def parse_mods(str)
       add_set = []

@@ -32,8 +32,9 @@ should do the trick provided you have a recent enough installation of Ruby. Run 
 
     # Lines separate elements
     ----------
-
-    name:       has_no_bangs
+    
+    # As a shortcut if the first label in an element has no content it is automatically considered a name
+    has_no_bangs: # equivalent to `name: has_no_bangs`
     condition:  requires_bang_response℗ | has_no_bangs(P)
     phi:        has_no_bangs_phi(P)
     # You can use embedded Ruby to process things compile time
@@ -42,6 +43,9 @@ should do the trick provided you have a recent enough installation of Ruby. Run 
     rho_minus:
       - has_no_bangs
     <% end %>
+    # Since test_plus (or minus) is closely related to rho_plus (or minus), the rho may be ommited
+    test_plus: see(Enemy)
+      - may_not_have_bangs
     
     
     # As you have guessed this goes to Behaviors.xml

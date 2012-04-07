@@ -1,12 +1,23 @@
 #!/usr/bin/env ruby
 require "optparse"
+require "fssm"
 require File.dirname(__FILE__) + "/../lib/ESBify"
 
 
 
-options = {stdout: false, expectations: "./Expectations.xml", behaviors: "./Behaviours.xml", filter: /.*/, only: %w[expectations behaviors strategies], context: {}}
+options = {stdout: false, expectations: "./Expectations.xml", behaviors: "./Behaviours.xml", strategies: "./Strategy.xml", filter: /.*/, only: %w[expectations behaviors strategies], context: {}, watch: false}
 OptionParser.new do |opts|
-  opts.banner = "Usage: esbify [options] FILES..."
+  opts.banner = "Usage: esbify [options] FILES...
+  ESBify will parse FILES and transform them to the appropriate XML. By default it will save expectations to 
+  Expectations.xml, behaviors to Behaviors.xml and strategies to Strategy.xml. 
+  
+  This can be customized with the following options:
+  "
+  
+  opts.on("--only expectations,behaviors,strategies", Array, "Only parse these sections.") do |v|
+    raise ArgumentError unless v.all?{|o| %w[expectations behaviors strategies].include?(o)}
+    options[:only] = v
+  end
   
   opts.on("-e", "--expectations FILE", "Output Expectations to FILE") do |v|
     options[:expectations] = v
@@ -16,18 +27,21 @@ OptionParser.new do |opts|
     options[:behaviors] = v
   end
   
-  opts.on("--[no-]stdout", "Print to STDOUT") do |v|
+  opts.on("-s", "--strategies FILE", "Output Strategies to FILE") do |v|
+    options[:strategies] = v
+  end
+  
+  opts.on("--[no-]stdout", "Print all files to STDOUT insted of individual files.") do |v|
     options[:stdout] = v
   end
+  
+  opts.separator("\nESBify will also print a list of expectation names to STDOUT.\n")
   
   opts.on("-f", "--filter REGEXP", "When printing out expectations, only print those matching this regexp.") do |v|
     options[:filter] = Regexp.new(v)
   end
   
-  opts.on("--only expectations,behaviors,strategies", Array, "Only generate these files") do |v|
-    raise ArgumentError unless v.all?{|o| %w[expectations behaviors strategies].include?(o)}
-    options[:only] = v
-  end
+  opts.separator("\nOther various options:\n")
   
   opts.on("--context HASH_OR_PATH", "A path to a ruby class or a hash of values that will be passed to ERB", "The ruby class should have a underscored filename and CamelCased classname. ") do |v|
     if v =~ /\:|=>/
@@ -38,6 +52,10 @@ OptionParser.new do |opts|
       const = Object.const_defined?(name) ? Object.const_get(name) : Object.const_missing(name)
       options[:context] = const.new
     end
+  end
+  
+  opts.on("-w", "--watch", "Watches files for changes and automatically recompiles on change.", "All files in `pwd` ending with .esb will be watched (FILES are ignored).") do |v|
+    options[:watch] = true
   end
   
   opts.on_tail("-h", "--help [README]", "Call -h with README to view the readme file") do |t|
@@ -56,18 +74,38 @@ OptionParser.new do |opts|
   
 end.parse!
 
-parser = ESBify::Parser.new options[:context]
 
-ARGV.each do |f|
-  parser.parse_file! f
+
+def run(files, options)
+  parser = ESBify::Parser.new options[:context]
+
+  files.each do |f|
+    parser.parse_file! f
+  end 
+
+  if options[:stdout]
+    puts parser.expectations if options[:only].include?("expectations")
+    puts parser.behaviors if options[:only].include?("behaviors")
+    puts parser.strategies if options[:only].include?("strategies")
+  else
+    File.open(options[:expectations], "w") {|f| f << parser.expectations } if options[:only].include?("expectations")
+    File.open(options[:behaviors], "w") {|f| f << parser.behaviors } if options[:only].include?("behaviors")
+    File.open(options[:strategies], "w") {|f| f << parser.strategies } if options[:only].include?("strategies")
+  end
+  STDERR.puts "Compiled!"
+  puts parser.expectation.names.grep(options[:filter]).join(",")
 end
 
-if options[:stdout]
-  puts parser.expectations if options[:only].include?("expectations")
-  puts parser.behaviors if options[:only].include?("behaviors")
+
+if options[:watch]
+  run(Dir[Dir.pwd + '/*.esb'], options)
+  
+  FSSM.monitor(Dir.pwd, '*.esb') do
+    update do |base, relative|
+      run(Dir[Dir.pwd + '/*.esb'], options)
+    end
+  end
+  
 else
-  File.open(options[:expectations], "w") {|f| f << parser.expectations } if options[:only].include?("expectations")
-  File.open(options[:behaviors], "w") {|f| f << parser.behaviors } if options[:only].include?("behaviors")
+  run ARGV, options
 end
-
-puts parser.expectation.names.grep(options[:filter]).join(",")
