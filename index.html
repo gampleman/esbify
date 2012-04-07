@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Esbify by gampleman</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Esbify</h1>
+<p>A small language for creating the input files for the ESB framework.</p>
+        <p class="view"><a href="https://github.com/gampleman/esbify">View the Project on GitHub <small>gampleman/esbify</small></a></p>
+        <ul>
+          <li><a href="https://github.com/gampleman/esbify/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/gampleman/esbify/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/gampleman/esbify">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>ESBify</h1>
+
+<p>ESBify is a simple DSL for creating the necessary XML files for the ESB framework.</p>
+
+<h2>Instalation</h2>
+
+<pre><code>$ gem install esbify
+</code></pre>
+
+<p>should do the trick provided you have a recent enough installation of Ruby. Run this to list basic usage:</p>
+
+<pre><code>$ esbify -h
+</code></pre>
+
+<h2>Syntax</h2>
+
+<pre><code># This is a comment
+
+# This is a header. Anything after this header will go to the relevant file
+!expectations 
+
+# And this is an element, in this case an expectation.
+name:       may_not_have_bangs
+# We haven't included an `agent:` label, it defaults to `self`.
+condition:  played(P1, duel, P2) | responded(P1, bang, P2, duel) | played(P1, indians, P2)
+phi:        requires_bang_response(P2)
+test_plus:  lost_life(P2)
+test_minus: played(P2, bang, P3) | responded(P2, bang, P3, _)
+rho_plus:
+  + has_no_bangs # `+` means that this will be added to EXP_C
+  - may_not_have_bangs # `-` means this will be removed from EXP_C
+rho_minus:
+  - has_no_bangs
+
+# Lines separate elements
+----------
+
+# As a shortcut if the first label in an element has no content it is automatically considered a name
+has_no_bangs: # equivalent to `name: has_no_bangs`
+condition:  requires_bang_response℗ | has_no_bangs(P)
+phi:        has_no_bangs_phi(P)
+# You can use embedded Ruby to process things compile time
+&lt;% if @drawing_supported %&gt;
+test_minus: draw(P, X)
+rho_minus:
+  - has_no_bangs
+&lt;% end %&gt;
+# Since test_plus (or minus) is closely related to rho_plus (or minus), the rho may be ommited
+test_plus: see(Enemy)
+  - may_not_have_bangs
+
+
+# As you have guessed this goes to Behaviors.xml
+!behaviors
+
+name:   JI plans
+jason:  has_no_bangs(P)
+action: card_expectation(P, bang, 0)
+</code></pre>
+
+<p>Compiles to:</p>
+
+<h3>
+<code>Expectations.xml</code>:</h3>
+
+<div class="highlight">
+<pre><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="cp">&lt;!DOCTYPE ExpectationSet SYSTEM "esb-ji-jason/ExpectationSet.dtd"&gt;</span>
+<span class="nt">&lt;ExpectationSet&gt;</span>
+
+  <span class="nt">&lt;expectation&gt;</span>
+    <span class="nt">&lt;agent&gt;</span>self<span class="nt">&lt;/agent&gt;</span>
+    <span class="nt">&lt;name&gt;</span>may_not_have_bangs<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;condition&gt;</span>played(P1, duel, P2) | responded(P1, bang, P2, duel) | played(P1, indians, P2)<span class="nt">&lt;/condition&gt;</span>
+    <span class="nt">&lt;phi&gt;</span>requires_bang_response(P2)<span class="nt">&lt;/phi&gt;</span>
+    <span class="nt">&lt;test_plus&gt;</span>lost_life(P2)<span class="nt">&lt;/test_plus&gt;</span>
+    <span class="nt">&lt;test_minus&gt;</span>played(P2, bang, P3) | responded(P2, bang, P3, _)<span class="nt">&lt;/test_minus&gt;</span>
+    <span class="nt">&lt;rho_plus&gt;</span>
+      <span class="nt">&lt;addSet&gt;</span>
+        <span class="nt">&lt;name&gt;</span>has_no_bangs <span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;/addSet&gt;</span>
+      <span class="nt">&lt;remSet&gt;</span>
+        <span class="nt">&lt;name&gt;</span>may_not_have_bangs<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;/remSet&gt;</span>
+    <span class="nt">&lt;/rho_plus&gt;</span>
+    <span class="nt">&lt;rho_minus&gt;</span>
+      <span class="nt">&lt;addSet&gt;</span>
+      <span class="nt">&lt;/addSet&gt;</span>
+      <span class="nt">&lt;remSet&gt;</span>
+        <span class="nt">&lt;name&gt;</span>has_no_bangs<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;/remSet&gt;</span>
+    <span class="nt">&lt;/rho_minus&gt;</span>
+  <span class="nt">&lt;/expectation&gt;</span>
+  <span class="nt">&lt;expectation&gt;</span>
+    <span class="nt">&lt;agent&gt;</span>self<span class="nt">&lt;/agent&gt;</span>
+    <span class="nt">&lt;name&gt;</span>has_no_bangs<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;condition&gt;</span>requires_bang_response(P) | has_no_bangs(P)<span class="nt">&lt;/condition&gt;</span>
+    <span class="nt">&lt;phi&gt;</span>has_no_bangs_phi(P)<span class="nt">&lt;/phi&gt;</span>
+    <span class="nt">&lt;test_plus&gt;</span>see(Enemy)<span class="nt">&lt;/test_plus&gt;</span>
+    <span class="nt">&lt;test_minus&gt;&lt;/test_minus&gt;</span>
+    <span class="nt">&lt;rho_plus&gt;</span>
+      <span class="nt">&lt;addSet&gt;</span>
+      <span class="nt">&lt;/addSet&gt;</span>
+      <span class="nt">&lt;remSet&gt;</span>
+        <span class="nt">&lt;name&gt;</span>may_not_have_bangs<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;/remSet&gt;</span>
+    <span class="nt">&lt;/rho_plus&gt;</span>
+    <span class="nt">&lt;rho_minus&gt;</span>
+      <span class="nt">&lt;addSet&gt;</span>
+      <span class="nt">&lt;/addSet&gt;</span>
+      <span class="nt">&lt;remSet&gt;</span>
+      <span class="nt">&lt;/remSet&gt;</span>
+    <span class="nt">&lt;/rho_minus&gt;</span>
+  <span class="nt">&lt;/expectation&gt;</span>
+<span class="nt">&lt;/ExpectationSet&gt;</span>
+</pre>
+</div>
+
+
+<h3><code>Behaviors.xml</code></h3>
+
+<div class="highlight">
+<pre><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="cp">&lt;!DOCTYPE BehaviourSet SYSTEM "esb-ji-jason/behaviours.dtd"&gt;</span>
+<span class="nt">&lt;BehaviourSet&gt;</span>
+
+  <span class="nt">&lt;behaviour</span> <span class="na">name=</span><span class="s">"JI plans"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;condition&gt;</span>
+      <span class="nt">&lt;ctl&gt;&lt;/ctl&gt;</span>
+      <span class="nt">&lt;jason&gt;</span>has_no_bangs(P)<span class="nt">&lt;/jason&gt;</span>
+    <span class="nt">&lt;/condition&gt;</span>
+    <span class="nt">&lt;action&gt;</span>card_expectation(P, bang, 0)<span class="nt">&lt;/action&gt;</span>
+  <span class="nt">&lt;/behaviour&gt;</span>
+<span class="nt">&lt;/BehaviourSet&gt;</span>
+</pre>
+</div>
+
+
+<h2>TextMate Plugin</h2>
+
+<p>The package contains a TextMate plugin that you may install. It provides syntax highlighting and some basic snippets.</p>
+      </section>
+    </div>
+    <footer>
+      <p>Project maintained by <a href="https://github.com/gampleman">gampleman</a></p>
+      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
+    </footer>
+    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+  </body>
+</html>
